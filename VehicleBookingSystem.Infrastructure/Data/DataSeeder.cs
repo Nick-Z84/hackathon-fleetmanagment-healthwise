@@ -88,6 +88,17 @@ public static class DataSeeder
             await vehicleRepo.DeleteAsync(bad.Id);
         }
 
+        // ?? Always: backfill TreadDepth for any vehicle that doesn't have one ??
+        var rngTread = new Random();   // unseeded so each app start gives different distribution
+        var vehiclesNeedingTread = (await vehicleRepo.GetAllAsync())
+            .Where(v => v.TreadDepth == null)
+            .ToList();
+        foreach (var v in vehiclesNeedingTread)
+        {
+            v.TreadDepth = (TreadDepth)rngTread.Next(3);
+            await vehicleRepo.UpdateAsync(v);
+        }
+
         // ?? Ensure at least one Available vehicle per location ????????????
         var currentVehicles = (await vehicleRepo.GetAllAsync()).ToList();
         foreach (var loc in FleetLocations.All)
