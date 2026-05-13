@@ -145,11 +145,15 @@
         const locationFilter = document.getElementById('locationFilter');
         const vehicleSelect  = document.getElementById('vehicleSelect');
         const dateHint       = document.getElementById('dateHint');
+
+        // Snapshot all vehicle options once; physically remove them so only
+        // matching ones live in the DOM (fixes Firefox ignoring display:none on <option>)
         const allVehicleOpts = Array.from(vehicleSelect.querySelectorAll('option[data-location]'));
+        allVehicleOpts.forEach(o => o.remove());
 
         let selectedStart = null, selectedEnd = null;
 
-        // ?? Flatpickr ????????????????????????????????????????????????????
+        // ?? Flatpickr ?????????????????????????????????????????????????????
         const startPicker = flatpickr('#startTimePicker', {
             enableTime: true, dateFormat: 'Y-m-d H:i',
             altInput: true,   altFormat: 'D d M Y H:i',
@@ -171,12 +175,13 @@
             }
         });
 
-        // ?? Refresh vehicle list when dates or location change ???????????
+        // ?? Trigger availability check whenever dates or location change ??
         function onDatesChanged() {
             if (!selectedStart) {
+                setPlaceholder('— Select dates first —');
                 vehicleSelect.disabled = true;
-                vehicleSelect.querySelector('option[value=""]').textContent = '— Select dates first —';
                 dateHint.innerHTML = '<i class="bi bi-info-circle me-1"></i>Select dates to see which vehicles are available.';
+                applyFilters(null);   // show all while no dates chosen
                 return;
             }
 
@@ -184,38 +189,61 @@
             const startStr = fmtLocal(selectedStart);
             const endStr   = fmtLocal(endMs);
 
-            dateHint.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Checking availability\u2026';
+            vehicleSelect.disabled = true;
+            setPlaceholder('— Checking availability… —');
+            dateHint.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Checking availability…';
 
             fetch(`/Bookings/GetAvailableVehicles?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`)
                 .then(r => r.json())
                 .then(unavailableIds => applyFilters(new Set(unavailableIds)))
                 .catch(() => {
-                    vehicleSelect.disabled = false;
-                    dateHint.innerHTML = '<span class="text-warning">Could not check availability.</span>';
+                    applyFilters(new Set());   // fail-open: show all
+                    dateHint.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Could not check availability — all vehicles shown.</span>';
                 });
         }
 
-        function applyFilters(unavailable) {
+        // ?? Rebuild <select> with only matching options ???????????????????
+        function applyFilters(unavailableIds) {
             const loc = locationFilter.value;
+
+            // Remove any currently inserted vehicle options
+            vehicleSelect.querySelectorAll('option[data-location]').forEach(o => o.remove());
+
             let shown = 0;
             allVehicleOpts.forEach(opt => {
                 const locOk  = !loc || opt.dataset.location === loc;
-                const dateOk = !unavailable.has(parseInt(opt.value));
-                const show   = locOk && dateOk;
-                opt.style.display = show ? '' : 'none';
-                if (!show && opt.selected) { opt.selected = false; vehicleSelect.value = ''; }
-                if (show) shown++;
+                const dateOk = !unavailableIds || !unavailableIds.has(parseInt(opt.value, 10));
+                if (locOk && dateOk) {
+                    vehicleSelect.appendChild(opt);
+                    shown++;
+                }
             });
-            vehicleSelect.querySelector('option[value=""]').textContent = shown
-                ? '— Select a vehicle —'
-                : '— No vehicles available —';
-            vehicleSelect.disabled = false;
-            dateHint.innerHTML = shown
-                ? `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>${shown} vehicle(s) available.</span>`
-                : `<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>No vehicles available — adjust dates or location.</span>`;
+
+            if (shown > 0) {
+                setPlaceholder('— Select a vehicle —');
+                vehicleSelect.disabled = false;
+                dateHint.innerHTML = selectedStart
+                    ? `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>${shown} vehicle(s) available for the selected period.</span>`
+                    : '<i class="bi bi-info-circle me-1"></i>Select dates to confirm availability.';
+            } else {
+                setPlaceholder('— No vehicles available —');
+                vehicleSelect.disabled = true;
+                if (selectedStart) {
+                    dateHint.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>No vehicles available — try different dates or location.</span>';
+                }
+            }
         }
 
-        locationFilter.addEventListener('change', () => { if (selectedStart) onDatesChanged(); });
+        function setPlaceholder(text) {
+            const ph = vehicleSelect.querySelector('option[value=""]');
+            if (ph) ph.textContent = text;
+        }
+
+        // Location filter triggers a re-check (re-uses the last availability result via re-fetch)
+        locationFilter.addEventListener('change', () => onDatesChanged());
+
+        // Show all vehicles initially (no date selected yet)
+        applyFilters(null);
 
         function fmtLocal(d) {
             const p = n => String(n).padStart(2, '0');

@@ -1,31 +1,176 @@
+/* ??? DriveWISE / Healthwise brand tokens ??????????????????????????????????? */
+:root {
+    /* Healthwise primary palette */
+    --hw-green:       #006B54;   /* deep teal-green  */
+    --hw-green-mid:   #008C6E;   /* medium green     */
+    --hw-green-light: #E6F4F0;   /* soft tint        */
+    --hw-orange:      #E8792B;   /* warm CTA orange  */
+    --hw-orange-hover:#C9621A;
+    --hw-dark:        #5a3f99;   /* purple           */
+    --hw-mid:         #4A6B60;   /* secondary text   */
+    --hw-border:      #C5DDD7;   /* subtle border    */
+
+    /* Bootstrap primary override ? Healthwise green */
+    --bs-primary:           #006B54;
+    --bs-primary-rgb:       0, 107, 84;
+    --bs-link-color:        #006B54;
+    --bs-link-hover-color:  #004D3C;
+    --bs-focus-ring-color:  rgba(0,107,84,.25);
+}
+
+/* ??? Base typography ??????????????????????????????????????????????????????? */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 html {
-  font-size: 14px;
+    font-size: 14px;
+    scroll-behavior: smooth;
 }
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
+@media (min-width: 768px) { html { font-size: 16px; } }
 
 body {
-  margin-bottom: 60px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--hw-dark);
+    background-color: #F4F7F6;
+    margin-bottom: 60px;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* ??? Focus rings ??????????????????????????????????????????????????????????? */
+.btn:focus, .btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.15rem rgba(0,107,84,.30);
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+/* ??? Navbar ???????????????????????????????????????????????????????????????? */
+.navbar-drivewise {
+    background: linear-gradient(135deg, #5a3f99 0%, var(--hw-green) 100%) !important;
+    border-bottom: 3px solid var(--hw-orange) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    padding-top: .55rem;
+    padding-bottom: .55rem;
+}
+.navbar-drivewise .navbar-brand {
+    color: #fff !important;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -.5px;
+}
+.navbar-drivewise .navbar-brand .brand-drive { color: #fff; }
+.navbar-drivewise .navbar-brand .brand-wise  { color: var(--hw-orange); }
+
+.navbar-drivewise .nav-link {
+    color: rgba(255,255,255,.85) !important;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: .35rem .75rem !important;
+    transition: background .15s, color .15s;
+}
+.navbar-drivewise .nav-link:hover,
+.navbar-drivewise .nav-link.active {
+    color: #fff !important;
+    background: rgba(255,255,255,.15) !important;
+}
+.navbar-drivewise .navbar-toggler {
+    border-color: rgba(255,255,255,.4);
+}
+.navbar-drivewise .navbar-toggler-icon {
+    filter: invert(1);
+}
+.navbar-drivewise .dropdown-menu {
+    border-color: var(--hw-border);
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+}
+
+/* New Booking CTA button in nav */
+.btn-nav-cta {
+    background-color: var(--hw-orange) !important;
+    border-color:     var(--hw-orange) !important;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 6px !important;
+    padding: .3rem .9rem !important;
+    transition: background .15s;
+}
+.btn-nav-cta:hover {
+    background-color: var(--hw-orange-hover) !important;
+    border-color:     var(--hw-orange-hover) !important;
+}
+
+/* ??? Bootstrap primary overrides ?????????????????????????????????????????? */
+.btn-primary {
+    background-color: var(--hw-green) !important;
+    border-color:     var(--hw-green) !important;
+    color: #fff !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #004D3C !important;
+    border-color:     #004D3C !important;
+}
+.btn-outline-primary {
+    color:        var(--hw-green) !important;
+    border-color: var(--hw-green) !important;
+}
+.btn-outline-primary:hover {
+    background-color: var(--hw-green) !important;
+    color: #fff !important;
+}
+a { color: var(--hw-green); }
+a:hover { color: #004D3C; }
+
+/* ??? Cards ????????????????????????????????????????????????????????????????? */
+.card {
+    border-color: var(--hw-border);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.card-header {
+    background-color: var(--hw-green-light);
+    border-bottom-color: var(--hw-border);
+    font-weight: 600;
+    color: var(--hw-dark);
+}
+
+/* Danger/compliance card header (red) stays red — don't override */
+.card-header.bg-danger { background-color: #dc3545 !important; }
+
+/* ??? Tables ???????????????????????????????????????????????????????????????? */
+.table-light th {
+    background-color: var(--hw-green-light) !important;
+    color: var(--hw-dark);
+    font-weight: 600;
+    font-size: .85rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.table-hover tbody tr:hover { background-color: #EBF4F1 !important; }
+
+/* ??? Badge primary colour ?????????????????????????????????????????????????? */
+.badge.bg-primary { background-color: var(--hw-green) !important; }
+
+/* ??? Footer ???????????????????????????????????????????????????????????????? */
+.footer {
+    background: var(--hw-dark);
+    color: rgba(255,255,255,.7);
+    font-size: .8rem;
+    border-top: 3px solid var(--hw-orange) !important;
+    padding: .75rem 0;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+.footer a { color: rgba(255,255,255,.8); }
+
+/* ??? Page headings ????????????????????????????????????????????????????????? */
+h2 { font-weight: 700; color: var(--hw-dark); }
+
+/* ??? Form floating placeholder fix ???????????????????????????????????????? */
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
+    text-align: start;
 }

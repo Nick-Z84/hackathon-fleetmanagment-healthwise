@@ -172,6 +172,65 @@ public class BookingsController(
         return RedirectToAction(nameof(Details), new { id = created.Id });
     }
 
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateOdometerStart(int id, int odometerStart)
+    {
+        var booking = await bookingRepo.GetByIdAsync(id);
+        if (booking is null || booking.Status != BookingStatus.Active)
+            return NotFound();
+
+        if (odometerStart < 0)
+        {
+            TempData["Error"] = "Odometer start cannot be negative.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (booking.OdometerEnd.HasValue && odometerStart > booking.OdometerEnd.Value)
+        {
+            TempData["Error"] = $"Odometer start ({odometerStart:N0} km) cannot exceed the current end value ({booking.OdometerEnd.Value:N0} km).";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var previous = booking.OdometerStart;
+        booking.OdometerStart = odometerStart;
+        await bookingRepo.UpdateAsync(booking);
+        await auditRepo.AddAsync(new AuditLog
+        {
+            EntityType = "Booking", EntityId = id, Action = "OdometerStartUpdated",
+            PerformedBy = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? booking.BookedBy,
+            Details = $"Odometer start changed from {previous:N0} km to {odometerStart:N0} km"
+        });
+
+        TempData["Success"] = $"Odometer start updated to {odometerStart:N0} km.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateOdometer(int id, int odometerEnd)
+    {
+        var booking = await bookingRepo.GetByIdAsync(id);
+        if (booking is null || booking.Status != BookingStatus.Active)
+            return NotFound();
+
+        if (odometerEnd < booking.OdometerStart)
+        {
+            TempData["Error"] = $"Odometer end ({odometerEnd:N0} km) cannot be less than start ({booking.OdometerStart:N0} km).";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        booking.OdometerEnd = odometerEnd;
+        await bookingRepo.UpdateAsync(booking);
+        await auditRepo.AddAsync(new AuditLog
+        {
+            EntityType = "Booking", EntityId = id, Action = "OdometerUpdated",
+            PerformedBy = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value ?? booking.BookedBy,
+            Details = $"Odometer end set to {odometerEnd:N0} km (start: {booking.OdometerStart:N0} km)"
+        });
+
+        TempData["Success"] = $"Odometer updated to {odometerEnd:N0} km.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     public async Task<IActionResult> Complete(int id)
     {
         var booking = await bookingRepo.GetByIdAsync(id);

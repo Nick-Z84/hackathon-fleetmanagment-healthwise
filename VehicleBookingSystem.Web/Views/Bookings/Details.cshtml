@@ -8,10 +8,29 @@
         BookingStatus.Completed => "bg-secondary",
         _ => "bg-danger"
     };
+    var pageUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/Bookings/Details/{Model.Id}";
+}
+
+@if (TempData["Success"] is string ok)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-1"></i>@ok
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-circle me-1"></i>@err
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2><i class="bi bi-calendar-check me-2"></i>Booking #@Model.Id</h2>
+    <div class="d-flex align-items-center gap-3">
+        <h2 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Booking #@Model.Id</h2>
+        <div id="bookingQr" title="QR code for this booking"></div>
+    </div>
     @if (Model.Status == BookingStatus.Active)
     {
         <div class="d-flex gap-2">
@@ -58,16 +77,57 @@
                 <li class="list-group-item d-flex justify-content-between">
                     <span>Actual End</span><span>@(Model.ActualEndTime?.ToString("dd MMM yyyy HH:mm") ?? "—")</span>
                 </li>
-                <li class="list-group-item d-flex justify-content-between"><span>Odometer Start</span><span>@Model.OdometerStart.ToString("N0") km</span></li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>Odometer End</span>
-                    <span>
-                        @if (Model.OdometerEnd.HasValue)
-                        {
-                            @($"{Model.OdometerEnd:N0} km (+{Model.OdometerEnd - Model.OdometerStart:N0} km)")
-                        }
-                        else { <text>—</text> }
-                    </span>
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Odometer Start</span>
+                        <span>@Model.OdometerStart.ToString("N0") km</span>
+                    </div>
+                    @if (Model.Status == BookingStatus.Active)
+                    {
+                        <form asp-action="UpdateOdometerStart" asp-route-id="@Model.Id"
+                              method="post" class="mt-2 d-flex gap-2 align-items-center">
+                            @Html.AntiForgeryToken()
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="odometerStart" class="form-control"
+                                       value="@Model.OdometerStart"
+                                       min="0"
+                                       placeholder="Start odometer" />
+                                <span class="input-group-text">km</span>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">
+                                <i class="bi bi-pencil me-1"></i>Update
+                            </button>
+                        </form>
+                    }
+                </li>
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Odometer End</span>
+                        <span>
+                            @if (Model.OdometerEnd.HasValue)
+                            {
+                                @($"{Model.OdometerEnd:N0} km (+{Model.OdometerEnd - Model.OdometerStart:N0} km)")
+                            }
+                            else { <text>—</text> }
+                        </span>
+                    </div>
+                    @if (Model.Status == BookingStatus.Active)
+                    {
+                        <form asp-action="UpdateOdometer" asp-route-id="@Model.Id"
+                              method="post" class="mt-2 d-flex gap-2 align-items-center">
+                            @Html.AntiForgeryToken()
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="odometerEnd" class="form-control"
+                                       value="@(Model.OdometerEnd ?? Model.OdometerStart)"
+                                       min="@Model.OdometerStart"
+                                       placeholder="Current odometer" />
+                                <span class="input-group-text">km</span>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">
+                                <i class="bi bi-pencil me-1"></i>Update
+                            </button>
+                        </form>
+                    }
                 </li>
                 @if (Model.Notes != null)
                 {
@@ -109,3 +169,22 @@
 </div>
 
 <a asp-action="Index" class="btn btn-link mt-3"><i class="bi bi-arrow-left me-1"></i>Back to Bookings</a>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+            integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSuhSuak9QQhTnm/OXbk+LuTchp3RxRV8EMg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        var _bookingPageUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(pageUrl));
+    </script>
+    <script>
+        new QRCode(document.getElementById('bookingQr'), {
+            text:         _bookingPageUrl,
+            width:        64,
+            height:       64,
+            colorDark:    '#000000',
+            colorLight:   '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    </script>
+}

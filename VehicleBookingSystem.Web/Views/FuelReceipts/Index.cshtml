@@ -1,4 +1,4 @@
-@model IEnumerable<VehicleBookingSystem.Core.Models.FuelReceipt>
+ï»¿@model IEnumerable<VehicleBookingSystem.Core.Models.FuelReceipt>
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
     ViewData["Title"] = "Fuel Receipts";
@@ -24,7 +24,7 @@
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label mb-1 small fw-semibold">Vehicle</label>
                 <select name="vehicles" class="form-select form-select-sm">
-                    <option value="">— All vehicles —</option>
+                    <option value="">â€” All vehicles â€”</option>
                     @foreach (var v in vehicleItems)
                     {
                         if (v.Value == vehicleId?.ToString())
@@ -49,7 +49,7 @@
             <div class="col-12 col-sm-6 col-md-3">
                 <label class="form-label mb-1 small fw-semibold">Uploaded By</label>
                 <select name="uploadedBy" class="form-select form-select-sm">
-                    <option value="">— All people —</option>
+                    <option value="">â€” All people â€”</option>
                     @foreach (var u in uploaders)
                     {
                         if (u == uploadedBy)
@@ -96,8 +96,8 @@
                         <td>@f.Litres L</td>
                         <td>$@f.CostPerLitre.ToString("F4")</td>
                         <td><strong>$@f.TotalCost.ToString("F2")</strong></td>
-                        <td>@(f.Station ?? "—")</td>
-                        <td>@(f.OdometerReading?.ToString("N0") ?? "—") km</td>
+                        <td>@(f.Station ?? "â€”")</td>
+                        <td>@(f.OdometerReading?.ToString("N0") ?? "â€”") km</td>
                         <td>@f.UploadedBy</td>
                         <td class="text-end">
                             @* Always show generated paper receipt *@
@@ -134,3 +134,15 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        // Your code that uses QRCode at line ~205
+        var qr = new QRCode(document.getElementById("qrcode"), {
+            text: "your-data-here",
+            width: 128,
+            height: 128
+        });
+    </script>
+}

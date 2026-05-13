@@ -18,7 +18,7 @@
     <div class="card-body p-0">
         <table class="table table-hover mb-0">
             <thead class="table-light">
-                <tr><th>Vehicle</th><th>Driver</th><th>Purpose</th><th>Destination</th><th>Start</th><th>End</th><th>Type</th><th>Odometer</th><th>Status</th><th></th></tr>
+                <tr><th>Vehicle</th><th>Driver</th><th>Purpose</th><th>Destination</th><th>Start</th><th>End</th><th>Type</th><th>Usage</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
                 @if (!Model.Any())
@@ -39,7 +39,16 @@
                         <td>@b.StartTime.ToString("dd MMM yyyy HH:mm")</td>
                         <td class="text-muted small">@(b.EndTime?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
                         <td><span class="badge @(b.IsBusinessUse ? "bg-primary" : "bg-danger")">@(b.IsBusinessUse ? "Business" : "Private")</span></td>
-                        <td>@b.OdometerStart.ToString("N0") km</td>
+                        <td>
+                            @if (b.OdometerEnd.HasValue)
+                            {
+                                <span>+@((b.OdometerEnd.Value - b.OdometerStart).ToString("N0")) km</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
                         <td>
                             <span class="badge @(b.Status == BookingStatus.Active ? "bg-success" : b.Status == BookingStatus.Completed ? "bg-secondary" : "bg-danger")">
                                 @b.Status
