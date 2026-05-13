@@ -1,0 +1,106 @@
+@model VehicleBookingSystem.Web.Models.CreateVehicleViewModel
+@{
+    ViewData["Title"] = "Add Vehicle";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <h2 class="mb-4"><i class="bi bi-plus-circle me-2"></i>Add Vehicle</h2>
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Make" class="form-label"></label>
+                            <input asp-for="Make" class="form-control" />
+                            <span asp-validation-for="Make" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Model" class="form-label"></label>
+                            <input asp-for="Model" class="form-control" />
+                            <span asp-validation-for="Model" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Year" class="form-label"></label>
+                            <input asp-for="Year" class="form-control" type="number" />
+                            <span asp-validation-for="Year" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="LicensePlate" class="form-label"></label>
+                            <input asp-for="LicensePlate" class="form-control" />
+                            <span asp-validation-for="LicensePlate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Odometer" class="form-label">Current Odometer (km)</label>
+                            <input asp-for="Odometer" class="form-control" type="number" />
+                            <span asp-validation-for="Odometer" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="InitialOdometer" class="form-label"></label>
+                            <input asp-for="InitialOdometer" class="form-control" type="number" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="FirstRegisteredDate" class="form-label"></label>
+                            <input asp-for="FirstRegisteredDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="LastServiceDate" class="form-label"></label>
+                            <input asp-for="LastServiceDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="NextServiceDate" class="form-label"></label>
+                            <input asp-for="NextServiceDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Notes" class="form-label"></label>
+                            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <hr class="my-3" />
+                    <h6 class="text-muted">Fleet Details</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Location" class="form-label"></label>
+                            <input asp-for="Location" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="FleetAllocation" class="form-label"></label>
+                            <input asp-for="FleetAllocation" class="form-control" />
+                        </div>
+                    </div>
+                    <hr class="my-3" />
+                    <h6 class="text-muted">Registration &amp; Insurance</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="RegistrationNumber" class="form-label"></label>
+                            <input asp-for="RegistrationNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="RegistrationExpiry" class="form-label"></label>
+                            <input asp-for="RegistrationExpiry" class="form-control" type="date" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="InsuranceProvider" class="form-label"></label>
+                            <input asp-for="InsuranceProvider" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="InsurancePolicyNumber" class="form-label"></label>
+                            <input asp-for="InsurancePolicyNumber" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="InsuranceExpiry" class="form-label"></label>
+                            <input asp-for="InsuranceExpiry" class="form-control" type="date" />
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save Vehicle</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }

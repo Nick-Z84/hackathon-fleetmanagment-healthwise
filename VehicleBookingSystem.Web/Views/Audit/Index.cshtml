@@ -1,0 +1,42 @@
+@model IEnumerable<VehicleBookingSystem.Core.Models.AuditLog>
+@{
+    ViewData["Title"] = "Audit Log";
+}
+
+<h2 class="mb-4"><i class="bi bi-journal-text me-2"></i>Audit Log</h2>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>When</th><th>Entity</th><th>ID</th><th>Action</th><th>By</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="text-muted text-center py-4">No audit entries.</td></tr>
+                }
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td>@a.Timestamp.ToString("dd MMM yyyy HH:mm")</td>
+                        <td>
+                            @if (a.EntityType == "Vehicle")
+                            {
+                                <a asp-controller="Vehicles" asp-action="Details" asp-route-id="@a.EntityId">Vehicle</a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Bookings" asp-action="Details" asp-route-id="@a.EntityId">Booking</a>
+                            }
+                        </td>
+                        <td>#@a.EntityId</td>
+                        <td><span class="badge bg-secondary">@a.Action</span></td>
+                        <td>@a.PerformedBy</td>
+                        <td class="text-muted small">@a.Details</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

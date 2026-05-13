@@ -1,0 +1,60 @@
+@model IEnumerable<VehicleBookingSystem.Core.Models.Booking>
+@using VehicleBookingSystem.Core.Models
+@{
+    ViewData["Title"] = "Bookings";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-calendar-check me-2"></i>Bookings</h2>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>New Booking</a>
+</div>
+
+<div class="btn-group mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary @(ViewBag.Filter == "all" ? "active" : "")">All</a>
+    <a asp-action="Index" asp-route-filter="active" class="btn btn-outline-secondary @(ViewBag.Filter == "active" ? "active" : "")">Active</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Vehicle</th><th>Driver</th><th>Purpose</th><th>Destination</th><th>Start</th><th>End</th><th>Type</th><th>Odometer</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="10" class="text-muted text-center py-4">No bookings found.</td></tr>
+                }
+                @foreach (var b in Model)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Vehicles" asp-action="Details" asp-route-id="@b.VehicleId">
+                                @b.Vehicle?.LicensePlate
+                            </a>
+                        </td>
+                        <td>@(b.Driver ?? b.BookedBy)</td>
+                        <td>@b.Purpose</td>
+                        <td>@(b.Destination ?? "—")</td>
+                        <td>@b.StartTime.ToString("dd MMM yyyy HH:mm")</td>
+                        <td class="text-muted small">@(b.EndTime?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                        <td><span class="badge @(b.IsBusinessUse ? "bg-primary" : "bg-danger")">@(b.IsBusinessUse ? "Business" : "Private")</span></td>
+                        <td>@b.OdometerStart.ToString("N0") km</td>
+                        <td>
+                            <span class="badge @(b.Status == BookingStatus.Active ? "bg-success" : b.Status == BookingStatus.Completed ? "bg-secondary" : "bg-danger")">
+                                @b.Status
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@b.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            @if (b.Status == BookingStatus.Active)
+                            {
+                                <a asp-action="Complete" asp-route-id="@b.Id" class="btn btn-sm btn-success">Complete</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

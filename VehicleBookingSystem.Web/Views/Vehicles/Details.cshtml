@@ -1,0 +1,362 @@
+@model VehicleBookingSystem.Core.Models.Vehicle
+@using VehicleBookingSystem.Core.Models
+@{
+    ViewData["Title"] = $"{Model.Year} {Model.Make} {Model.Model}";
+    var statusBadge = Model.Status switch
+    {
+        VehicleStatus.Available => "bg-success",
+        VehicleStatus.Booked => "bg-warning text-dark",
+        VehicleStatus.InService => "bg-info text-dark",
+        _ => "bg-secondary"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-car-front me-2"></i>@Model.Year @Model.Make @Model.Model</h2>
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+        <a asp-action="UpdateService" asp-route-id="@Model.Id" class="btn btn-warning">Update Service</a>
+        <a asp-controller="Bookings" asp-action="Create" asp-route-vehicleId="@Model.Id" class="btn btn-success">Book</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        @if (!string.IsNullOrEmpty(Model.ImagePath))
+        {
+            <div class="card mb-3">
+                <img src="@Model.ImagePath" alt="@Model.Year @Model.Make @Model.Model"
+                     class="card-img-top" style="max-height:260px; object-fit:cover;" />
+            </div>
+        }
+        else
+        {
+            <div class="card mb-3 bg-light" id="wikiImageCard" style="min-height:200px">
+                <div class="card-body text-center text-muted py-4" id="wikiImagePlaceholder">
+                    <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+                    <p class="small mb-0">Loading vehicle image…</p>
+                </div>
+                <img id="wikiImage" src="" alt="@Model.Year @Model.Make @Model.Model"
+                     class="card-img-top d-none" style="max-height:260px; object-fit:cover;" />
+                <div class="card-footer text-muted small d-none" id="wikiImageCredit"></div>
+            </div>
+        }
+        <div class="card">
+            <div class="card-header">Vehicle Details</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between"><span>License Plate</span><strong>@Model.LicensePlate</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Status</span><span class="badge @statusBadge">@Model.Status</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Current Odometer</span><strong>@Model.Odometer.ToString("N0") km</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Initial Odometer</span><span>@Model.InitialOdometer.ToString("N0") km</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>First Registered</span><span>@(Model.FirstRegisteredDate?.ToString() ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Location</span><span>@(Model.Location ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Fleet Allocation</span><span>@(Model.FleetAllocation ?? "—")</span></li>
+            </ul>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-card-checklist me-1"></i>Compliance</div>
+            <ul class="list-group list-group-flush">
+                @{
+                    var today = DateOnly.FromDateTime(DateTime.Today);
+                    var regClass = Model.RegistrationExpiry.HasValue && Model.RegistrationExpiry <= today ? "text-danger fw-bold"
+                        : Model.RegistrationExpiry.HasValue && Model.RegistrationExpiry <= today.AddDays(60) ? "text-warning fw-semibold" : "";
+                    var insClass = Model.InsuranceExpiry.HasValue && Model.InsuranceExpiry <= today ? "text-danger fw-bold"
+                        : Model.InsuranceExpiry.HasValue && Model.InsuranceExpiry <= today.AddDays(60) ? "text-warning fw-semibold" : "";
+                }
+                <li class="list-group-item d-flex justify-content-between"><span>Rego #</span><span>@(Model.RegistrationNumber ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Rego Expiry</span><span class="@regClass">@(Model.RegistrationExpiry?.ToString() ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Insurer</span><span>@(Model.InsuranceProvider ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Policy #</span><span>@(Model.InsurancePolicyNumber ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Insurance Expiry</span><span class="@insClass">@(Model.InsuranceExpiry?.ToString() ?? "—")</span></li>
+            </ul>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-wrench me-1"></i>Service</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between"><span>Last Service</span><span>@(Model.LastServiceDate?.ToString() ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Next Service</span>
+                    @if (Model.NextServiceDate.HasValue)
+                    {
+                        var overdue = Model.NextServiceDate.Value <= today;
+                        <span class="@(overdue ? "text-danger fw-bold" : "")">@Model.NextServiceDate</span>
+                    }
+                    else { <span class="text-muted">—</span> }
+                </li>
+                @if (Model.Notes != null)
+                {
+                    <li class="list-group-item"><span class="text-muted">@Model.Notes</span></li>
+                }
+            </ul>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Danger Zone</span>
+            </div>
+            <div class="card-body">
+                <form asp-action="Delete" asp-route-id="@Model.Id" method="post"
+                      onsubmit="return confirm('Delete this vehicle? This cannot be undone.');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger w-100"><i class="bi bi-trash me-1"></i>Delete Vehicle</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-fuel-pump me-1"></i>Fuel Receipts</span>
+                <div class="d-flex gap-2 align-items-center">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            data-bs-toggle="collapse" data-bs-target="#fuelQrPanel" aria-expanded="false"
+                            title="Show QR code for adding fuel receipts">
+                        <i class="bi bi-qr-code me-1"></i>QR Code
+                    </button>
+                    <a asp-controller="FuelReceipts" asp-action="Create" asp-route-vehicles="@Model.Id"
+                       class="btn btn-sm btn-outline-primary">Add Receipt</a>
+                </div>
+            </div>
+            @* ?? QR panel (collapsed by default) ?? *@
+            <div class="collapse" id="fuelQrPanel">
+                <div class="card-body border-bottom bg-light d-flex flex-column align-items-center py-3">
+                    <p class="small text-muted mb-2 text-center">
+                        Scan or print this QR code and place it in the vehicle.<br/>
+                        Drivers can scan it to submit a fuel receipt immediately.
+                    </p>
+                    <div id="vehicleFuelQr" class="mb-2"></div>
+                    <div class="small text-muted">@Model.Year @Model.Make @Model.Model · @Model.LicensePlate</div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="printQr()">
+                        <i class="bi bi-printer me-1"></i>Print QR Code
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @{ var fuel = ViewBag.FuelReceipts as IEnumerable<VehicleBookingSystem.Core.Models.FuelReceipt>; }
+                @if (fuel == null || !fuel.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No fuel receipts recorded.</p>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Date</th><th>Litres</th><th>Total</th><th>Station</th><th>Odometer</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var f in fuel)
+                            {
+                                <tr>
+                                    <td>@f.Date</td>
+                                    <td>@f.Litres L</td>
+                                    <td>$@f.TotalCost.ToString("F2")</td>
+                                    <td>@(f.Station ?? "—")</td>
+                                    <td>@(f.OdometerReading?.ToString("N0") ?? "—") km</td>
+                                    <td>
+                                        @if (f.ReceiptFilePath != null)
+                                        {
+                                            <a href="/@f.ReceiptFilePath" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-paperclip"></i>
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body p-0">
+                @if (!Model.Bookings.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No bookings yet.</p>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Booked By</th><th>Purpose</th><th>Start</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var b in Model.Bookings.OrderByDescending(b => b.StartTime))
+                            {
+                                <tr>
+                                    <td>@b.BookedBy</td>
+                                    <td>@b.Purpose</td>
+                                    <td>@b.StartTime.ToString("dd MMM yyyy")</td>
+                                    <td><span class="badge @(b.Status == BookingStatus.Active ? "bg-success" : b.Status == BookingStatus.Completed ? "bg-secondary" : "bg-danger")">@b.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-journal-text me-1"></i>Audit Log</div>
+            <div class="card-body p-0">
+                @{ var logs = ViewBag.AuditLogs as IEnumerable<VehicleBookingSystem.Core.Models.AuditLog>; }
+                @if (logs == null || !logs.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No audit entries.</p>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Action</th><th>By</th><th>When</th><th>Details</th></tr></thead>
+                        <tbody>
+                            @foreach (var a in logs)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-secondary">@a.Action</span></td>
+                                    <td>@a.PerformedBy</td>
+                                    <td>@a.Timestamp.ToString("dd MMM HH:mm")</td>
+                                    <td class="text-muted small">@a.Details</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<a asp-action="Index" class="btn btn-link mt-3"><i class="bi bi-arrow-left me-1"></i>Back to Vehicles</a>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+            integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSuhSuak9QQhTnm/OXbk+LuTchp3RxRV8EMg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+    (() => {
+        const qrUrl = '@Html.Raw(ViewBag.FuelQrUrl)';
+
+        // Generate QR code when the collapse panel first opens
+        let generated = false;
+        const panel = document.getElementById('fuelQrPanel');
+        if (panel) {
+            panel.addEventListener('show.bs.collapse', () => {
+                if (generated) return;
+                generated = true;
+                new QRCode(document.getElementById('vehicleFuelQr'), {
+                    text:         qrUrl,
+                    width:        180,
+                    height:       180,
+                    colorDark:    '#000000',
+                    colorLight:   '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            });
+        }
+    })();
+
+    window.printQr = function () {
+        const qrEl = document.getElementById('vehicleFuelQr');
+        if (!qrEl) {
+            alert('Please open the QR Code panel first.');
+            return;
+        }
+        const canvas = qrEl.querySelector('canvas');
+        const img    = qrEl.querySelector('img');
+        const src    = canvas ? canvas.toDataURL() : (img ? img.src : '');
+        if (!src) {
+            alert('QR code is not yet generated — please open the QR Code panel and wait a moment.');
+            return;
+        }
+
+        // Safely embed vehicle info using JSON-encoded strings (handles any special characters)
+        const label = @Html.Raw(System.Text.Json.JsonSerializer.Serialize($"{Model.Year} {Model.Make} {Model.Model}"));
+        const plate = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.LicensePlate ?? ""));
+
+        const html = [
+            '<!DOCTYPE html><html><head><meta charset="utf-8">',
+            '<title>QR \u2014 ' + plate + '</title>',
+            '<style>',
+            'body{margin:0;font-family:Arial,sans-serif;display:flex;flex-direction:column;',
+            'align-items:center;justify-content:center;min-height:100vh;background:#fff}',
+            'img{width:230px;height:230px}',
+            '.lbl{margin-top:12px;font-size:14px;text-align:center;line-height:1.6}',
+            '.sub{font-size:11px;color:#666}',
+            '</style></head>',
+            '<body>',
+            '<img src="' + src + '" alt="QR Code"/>',
+            '<div class="lbl"><strong>' + label + '</strong><br/>' + plate + '<br/>',
+            '<span class="sub">Scan to submit fuel receipt</span></div>',
+            '<scr' + 'ipt>window.onload=function(){window.print();}</' + 'script>',
+            '</body></html>'
+        ].join('');
+
+        try {
+            const blob = new Blob([html], { type: 'text/html' });
+            const url  = URL.createObjectURL(blob);
+            const win  = window.open(url, '_blank', 'width=420,height=540');
+            if (!win) {
+                URL.revokeObjectURL(url);
+                alert('The print popup was blocked by your browser.\nPlease allow popups for this site and try again.');
+                return;
+            }
+            // Release the blob URL once the window has loaded it
+            win.addEventListener('load', () => URL.revokeObjectURL(url));
+        } catch (e) {
+            console.error('printQr error:', e);
+            alert('Could not open print window: ' + e.message);
+        }
+    };
+    </script>
+
+    @if (string.IsNullOrEmpty(Model.ImagePath))
+    {
+        <script>
+        (() => {
+            const make  = '@Html.Raw(Model.Make.Replace("'", "\\'"))';
+            const model = '@Html.Raw(Model.Model.Replace("'", "\\'"))';
+            const year  = @Model.Year;
+            const imgEl       = document.getElementById('wikiImage');
+            const placeholder = document.getElementById('wikiImagePlaceholder');
+            const credit      = document.getElementById('wikiImageCredit');
+            if (!imgEl) return;
+
+            const candidates = [
+                `${year}_${make}_${model}`,
+                `${make}_${model}_(${year})`,
+                `${make}_${model}`,
+                `${year}_${make}`
+            ].map(s => s.replace(/\s+/g, '_'));
+
+            async function tryCandidate(title) {
+                const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+                try {
+                    const res  = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) return false;
+                    const data = await res.json();
+                    const thumb = data.thumbnail?.source || data.originalimage?.source;
+                    if (!thumb) return false;
+                    imgEl.src     = thumb;
+                    imgEl.alt     = data.title || `${year} ${make} ${model}`;
+                    imgEl.onload  = () => {
+                        placeholder.classList.add('d-none');
+                        imgEl.classList.remove('d-none');
+                        if (data.content_urls?.desktop?.page) {
+                            credit.innerHTML = `Image source: <a href="${data.content_urls.desktop.page}" target="_blank" rel="noopener">Wikipedia — ${data.title}</a>`;
+                            credit.classList.remove('d-none');
+                        }
+                    };
+                    return true;
+                } catch { return false; }
+            }
+
+            (async () => {
+                for (const c of candidates) {
+                    if (await tryCandidate(c)) return;
+                }
+                placeholder.innerHTML = `<i class="bi bi-car-front fs-1"></i>
+                    <p class="mt-2 mb-0 small">No photo found — upload one via <a href="Edit">Edit</a></p>`;
+            })();
+        })();
+        </script>
+    }
+}

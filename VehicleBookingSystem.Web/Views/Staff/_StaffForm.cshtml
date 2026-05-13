@@ -1,0 +1,49 @@
+@model VehicleBookingSystem.Web.Models.StaffViewModel
+@using VehicleBookingSystem.Core.Models
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="FirstName" class="form-label"></label>
+        <input asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="LastName" class="form-label"></label>
+        <input asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Username" class="form-label"></label>
+        <input asp-for="Username" class="form-control" autocomplete="off" />
+        <span asp-validation-for="Username" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Role" class="form-label"></label>
+        <select asp-for="Role" class="form-select"
+                asp-items="Html.GetEnumSelectList<StaffRole>()"></select>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Password" class="form-label">
+            Password <span class="text-muted small">(leave blank to keep current)</span>
+        </label>
+        <input asp-for="Password" class="form-control" type="password" autocomplete="new-password" />
+        <span asp-validation-for="Password" class="text-danger small"></span>
+    </div>
+    <div class="col-12">
+        <div class="form-check form-switch">
+            <input asp-for="HasDriversLicence" class="form-check-input" role="switch" id="dlToggle" />
+            <label asp-for="HasDriversLicence" class="form-check-label" for="dlToggle"></label>
+        </div>
+    </div>
+    <div class="col-md-6" id="expiryRow">
+        <label asp-for="DriversLicenceExpiry" class="form-label"></label>
+        <input asp-for="DriversLicenceExpiry" class="form-control" type="date" />
+        <span asp-validation-for="DriversLicenceExpiry" class="text-danger small"></span>
+    </div>
+</div>
+<script>
+    const toggle = document.getElementById('dlToggle');
+    const expRow = document.getElementById('expiryRow');
+    function syncRow() { expRow.style.display = toggle.checked ? '' : 'none'; }
+    toggle.addEventListener('change', syncRow);
+    syncRow();
+</script>

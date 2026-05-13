@@ -1,0 +1,111 @@
+@model VehicleBookingSystem.Core.Models.Booking
+@using VehicleBookingSystem.Core.Models
+@{
+    ViewData["Title"] = $"Booking #{Model.Id}";
+    var statusBadge = Model.Status switch
+    {
+        BookingStatus.Active => "bg-success",
+        BookingStatus.Completed => "bg-secondary",
+        _ => "bg-danger"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-calendar-check me-2"></i>Booking #@Model.Id</h2>
+    @if (Model.Status == BookingStatus.Active)
+    {
+        <div class="d-flex gap-2">
+            <a asp-action="Complete" asp-route-id="@Model.Id" class="btn btn-success">
+                <i class="bi bi-check-circle me-1"></i>Complete
+            </a>
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post"
+                  onsubmit="return confirm('Cancel this booking?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Cancel</button>
+            </form>
+        </div>
+    }
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">Booking Details</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Status</span><span class="badge @statusBadge">@Model.Status</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Vehicle</span>
+                    <a asp-controller="Vehicles" asp-action="Details" asp-route-id="@Model.VehicleId">
+                        @Model.Vehicle?.LicensePlate
+                    </a>
+                </li>
+                <li class="list-group-item d-flex justify-content-between"><span>Booked By</span><strong>@Model.BookedBy</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Driver</span><strong>@(Model.Driver ?? Model.BookedBy)</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Purpose</span><span>@Model.Purpose</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>Destination</span><span>@(Model.Destination ?? "—")</span></li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Trip Type</span>
+                    <span class="badge @(Model.IsBusinessUse ? "bg-primary" : "bg-danger")">
+                        @(Model.IsBusinessUse ? "Business" : "Private")
+                    </span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between"><span>Start</span><span>@Model.StartTime.ToString("dd MMM yyyy HH:mm")</span></li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Expected End</span><span>@(Model.EndTime?.ToString("dd MMM yyyy HH:mm") ?? "—")</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Actual End</span><span>@(Model.ActualEndTime?.ToString("dd MMM yyyy HH:mm") ?? "—")</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between"><span>Odometer Start</span><span>@Model.OdometerStart.ToString("N0") km</span></li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Odometer End</span>
+                    <span>
+                        @if (Model.OdometerEnd.HasValue)
+                        {
+                            @($"{Model.OdometerEnd:N0} km (+{Model.OdometerEnd - Model.OdometerStart:N0} km)")
+                        }
+                        else { <text>—</text> }
+                    </span>
+                </li>
+                @if (Model.Notes != null)
+                {
+                    <li class="list-group-item text-muted small">@Model.Notes</li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-journal-text me-1"></i>Audit Log</div>
+            <div class="card-body p-0">
+                @{ var logs = ViewBag.AuditLogs as IEnumerable<VehicleBookingSystem.Core.Models.AuditLog>; }
+                @if (logs == null || !logs.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No audit entries.</p>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Action</th><th>By</th><th>When</th><th>Details</th></tr></thead>
+                        <tbody>
+                            @foreach (var a in logs)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-secondary">@a.Action</span></td>
+                                    <td>@a.PerformedBy</td>
+                                    <td>@a.Timestamp.ToString("dd MMM HH:mm")</td>
+                                    <td class="text-muted small">@a.Details</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<a asp-action="Index" class="btn btn-link mt-3"><i class="bi bi-arrow-left me-1"></i>Back to Bookings</a>

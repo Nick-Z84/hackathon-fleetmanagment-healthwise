@@ -1,0 +1,75 @@
+@model IEnumerable<VehicleBookingSystem.Core.Models.Vehicle>
+@using VehicleBookingSystem.Core.Models
+@{
+    ViewData["Title"] = "Vehicles";
+    var statusBadge = (VehicleStatus s) => s switch
+    {
+        VehicleStatus.Available => "bg-success",
+        VehicleStatus.Booked => "bg-warning text-dark",
+        VehicleStatus.InService => "bg-info text-dark",
+        _ => "bg-secondary"
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-car-front me-2"></i>Vehicles</h2>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Add Vehicle</a>
+</div>
+
+<div class="btn-group mb-3">
+    <a asp-action="Index" class="btn btn-outline-secondary @(ViewBag.FilterStatus == null ? "active" : "")">All</a>
+    @foreach (var s in Enum.GetValues<VehicleStatus>())
+    {
+        <a asp-action="Index" asp-route-status="@s"
+           class="btn btn-outline-secondary @(ViewBag.FilterStatus == s.ToString() ? "active" : "")">@s</a>
+    }
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Vehicle</th><th>License Plate</th><th>Location</th><th>Status</th>
+                    <th>Odometer</th><th>Reg Expiry</th><th>Ins Expiry</th><th>Next Service</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="9" class="text-muted text-center py-4">No vehicles found.</td></tr>
+                }
+                @foreach (var v in Model)
+                {
+                    var today = DateOnly.FromDateTime(DateTime.Today);
+                    <tr>
+                        <td><a asp-action="Details" asp-route-id="@v.Id">@v.Year @v.Make @v.Model</a></td>
+                        <td>@v.LicensePlate</td>
+                        <td>@(v.Location ?? "—")</td>
+                        <td><span class="badge @statusBadge(v.Status)">@v.Status</span></td>
+                        <td>@v.Odometer.ToString("N0") km</td>
+                        <td class="@(v.RegistrationExpiry.HasValue && v.RegistrationExpiry <= today ? "text-danger fw-bold" : v.RegistrationExpiry.HasValue && v.RegistrationExpiry <= today.AddDays(60) ? "text-warning" : "")">
+                            @(v.RegistrationExpiry?.ToString() ?? "—")
+                        </td>
+                        <td class="@(v.InsuranceExpiry.HasValue && v.InsuranceExpiry <= today ? "text-danger fw-bold" : v.InsuranceExpiry.HasValue && v.InsuranceExpiry <= today.AddDays(60) ? "text-warning" : "")">
+                            @(v.InsuranceExpiry?.ToString() ?? "—")
+                        </td>
+                        <td>
+                            @if (v.NextServiceDate.HasValue)
+                            {
+                                var overdue = v.NextServiceDate.Value <= today;
+                                <span class="@(overdue ? "text-danger fw-bold" : "")">@v.NextServiceDate</span>
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@v.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            <a asp-action="Edit" asp-route-id="@v.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a asp-action="UpdateService" asp-route-id="@v.Id" class="btn btn-sm btn-outline-warning">Service</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

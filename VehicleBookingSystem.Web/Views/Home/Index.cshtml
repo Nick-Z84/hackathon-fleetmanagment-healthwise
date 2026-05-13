@@ -1,0 +1,523 @@
+@model VehicleBookingSystem.Web.Models.DashboardViewModel
+@using VehicleBookingSystem.Core
+@using VehicleBookingSystem.Core.Models
+@{
+    ViewData["Title"] = "Dashboard";
+    var today   = DateOnly.FromDateTime(DateTime.Today);
+    var alert30 = today.AddDays(30);
+    var now     = DateTime.Now;
+
+    // Helper: format age as "X yr Y mo"
+    string FormatAge(int modelYear)
+    {
+        var months = (today.Year - modelYear) * 12 + today.Month;
+        var yrs    = months / 12;
+        var mos    = months % 12;
+        return mos > 0 ? $"{yrs} yr {mos} mo" : $"{yrs} yr";
+    }
+}
+
+<style>
+    .metric-card { cursor: pointer; transition: transform .15s, box-shadow .15s; }
+    .metric-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+</style>
+
+<h2 class="mb-3"><i class="bi bi-speedometer2 me-2"></i>Fleet Dashboard</h2>
+
+@* ?? Row 0: Metric Cards ????????????????????????????????????????????? *@
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card text-bg-danger metric-card h-100"
+             data-sort-col="odo" data-sort-dir="desc"
+             title="Vehicles with odometer over 100,000 km — click to sort">
+            <div class="card-body text-center py-3">
+                <div class="display-6 fw-bold">@Model.HighMileageCount</div>
+                <div class="small mt-1">High Mileage<br><span class="opacity-75">&gt; 100,000 km</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card text-bg-danger metric-card h-100"
+             data-sort-col="age" data-sort-dir="desc"
+             title="Vehicles 5 years or older — click to sort">
+            <div class="card-body text-center py-3">
+                <div class="display-6 fw-bold">@Model.HighAgeCount</div>
+                <div class="small mt-1">Ageing Vehicles<br><span class="opacity-75">&gt;= 5 years</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card text-bg-danger metric-card h-100"
+             data-sort-col="reg" data-sort-dir="asc"
+             title="Vehicles with expired registration — click to sort">
+            <div class="card-body text-center py-3">
+                <div class="display-6 fw-bold">@Model.OverdueRegCount</div>
+                <div class="small mt-1">Reg Overdue<br><span class="opacity-75">expired</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card text-bg-danger metric-card h-100"
+             data-sort-col="ins" data-sort-dir="asc"
+             title="Vehicles with expired insurance — click to sort">
+            <div class="card-body text-center py-3">
+                <div class="display-6 fw-bold">@Model.OverdueInsCount</div>
+                <div class="small mt-1">Insurance Overdue<br><span class="opacity-75">expired</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl">
+        <div class="card text-bg-warning metric-card h-100"
+             data-sort-col="svc" data-sort-dir="asc"
+             title="Vehicles with overdue service — click to sort">
+            <div class="card-body text-center py-3">
+                <div class="display-6 fw-bold">@Model.OverdueSvcCount</div>
+                <div class="small mt-1">Service Overdue<br><span class="opacity-75">past due date</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ?? Row 1: Calendar (full width) ??????????????????????????????????? *@
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <button class="btn btn-sm btn-outline-secondary" id="prevMonth">&#8249;</button>
+                <span id="calMonthLabel" class="fw-semibold fs-6"></span>
+                <button class="btn btn-sm btn-outline-secondary" id="nextMonth">&#8250;</button>
+            </div>
+            <div class="card-body p-3">
+                <div id="calGrid"></div>
+                <div class="d-flex flex-wrap gap-3 mt-2 small text-muted">
+                    <span><span class="badge bg-success">&nbsp;&nbsp;</span> All available</span>
+                    <span><span class="badge bg-warning text-dark">&nbsp;&nbsp;</span> Partially booked</span>
+                    <span><span class="badge bg-danger">&nbsp;&nbsp;</span> Fully booked</span>
+                    <span><span class="badge bg-secondary">&nbsp;&nbsp;</span> Past</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ?? Row 2: Upcoming & Current Bookings ?????????????????????????????? *@
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-check me-1"></i>Upcoming &amp; Current Bookings</span>
+                <a asp-controller="Bookings" asp-action="Create" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>New Booking
+                </a>
+            </div>
+            <div class="card-body p-0" style="max-height:360px;overflow-y:auto">
+                @if (!Model.ActiveBookings.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No upcoming or current bookings.</p>
+                }
+                else
+                {
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width:155px">Start</th>
+                                <th style="width:155px">End</th>
+                                <th style="width:90px">Vehicle</th>
+                                <th>Driver</th>
+                                <th>Destination</th>
+                                <th style="width:90px">Type</th>
+                                <th style="width:85px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in Model.ActiveBookings)
+                            {
+                                var isActive = b.StartTime <= now;
+                                var rowClass = isActive ? "table-success" : "table-info";
+                                <tr class="@rowClass">
+                                    <td class="text-nowrap">
+                                        @b.StartTime.ToString("dd MMM yy HH:mm")
+                                        @if (!isActive)
+                                        {
+                                            <span class="badge bg-info text-dark ms-1">Upcoming</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success ms-1">Current</span>
+                                        }
+                                    </td>
+                                    <td class="text-nowrap text-muted small">
+                                        @(b.EndTime?.ToString("dd MMM yy HH:mm") ?? "—")
+                                    </td>
+                                    <td>
+                                        <a asp-controller="Bookings" asp-action="Details" asp-route-id="@b.Id">
+                                            @b.Vehicle?.LicensePlate
+                                        </a>
+                                    </td>
+                                    <td>@(b.Driver ?? b.BookedBy)</td>
+                                    <td class="text-muted small">@(b.Destination ?? "—")</td>
+                                    <td>
+                                        @if (b.IsBusinessUse)
+                                        {
+                                            <span class="badge bg-primary">Business</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Private</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-controller="Bookings" asp-action="Complete" asp-route-id="@b.Id"
+                                           class="btn btn-sm btn-outline-success py-0">Complete</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ?? Row 3: Driver Usage ????????????????????????????????????????????? *@
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-person-badge me-1"></i>Driver Usage
+            </div>
+            <div class="card-body p-0" style="max-height:300px;overflow-y:auto">
+                @if (!Model.DriverUsage.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No completed trips with odometer data yet.</p>
+                }
+                else
+                {
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width:180px">Driver</th>
+                                <th class="text-center" style="width:80px">
+                                    Trips
+                                    <button class="btn btn-link btn-sm p-0 ms-1 driver-sort" data-col="trips" title="Sort">
+                                        <i class="bi bi-arrow-up" id="drv-trips-up"></i><i class="bi bi-arrow-down" id="drv-trips-dn"></i>
+                                    </button>
+                                </th>
+                                <th class="text-end" style="width:120px">
+                                    Total KM
+                                    <button class="btn btn-link btn-sm p-0 ms-1 driver-sort" data-col="km" title="Sort">
+                                        <i class="bi bi-arrow-up" id="drv-km-up"></i><i class="bi bi-arrow-down" id="drv-km-dn"></i>
+                                    </button>
+                                </th>
+                                <th class="text-end" style="width:120px">
+                                    Business KM
+                                    <button class="btn btn-link btn-sm p-0 ms-1 driver-sort" data-col="bkm" title="Sort">
+                                        <i class="bi bi-arrow-up" id="drv-bkm-up"></i><i class="bi bi-arrow-down" id="drv-bkm-dn"></i>
+                                    </button>
+                                </th>
+                                <th class="text-end" style="width:110px">
+                                    Private KM
+                                    <button class="btn btn-link btn-sm p-0 ms-1 driver-sort" data-col="pkm" title="Sort">
+                                        <i class="bi bi-arrow-up" id="drv-pkm-up"></i><i class="bi bi-arrow-down" id="drv-pkm-dn"></i>
+                                    </button>
+                                </th>
+                                <th style="width:130px">Last Trip</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driverTbody">
+                            @foreach (var d in Model.DriverUsage)
+                            {
+                                var bkmPct = d.TotalKm > 0 ? (double)d.BusinessKm / d.TotalKm * 100 : 0;
+                                var pkmPct = d.TotalKm > 0 ? (double)d.PrivateKm  / d.TotalKm * 100 : 0;
+                                <tr data-trips="@d.TotalTrips.ToString("D6")"
+                                    data-km="@d.TotalKm.ToString("D9")"
+                                    data-bkm="@d.BusinessKm.ToString("D9")"
+                                    data-pkm="@d.PrivateKm.ToString("D9")">
+                                    <td><i class="bi bi-person-fill text-secondary me-1"></i>@d.DriverName</td>
+                                    <td class="text-center fw-bold">@d.TotalTrips</td>
+                                    <td class="text-end">
+                                        <strong>@d.TotalKm.ToString("N0")</strong>
+                                        <div class="progress mt-1" style="height:4px">
+                                            <div class="progress-bar bg-primary" style="width:@bkmPct.ToString("F0")%"></div>
+                                            <div class="progress-bar bg-danger"  style="width:@pkmPct.ToString("F0")%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end text-primary">@d.BusinessKm.ToString("N0") km</td>
+                                    <td class="text-end text-danger">@d.PrivateKm.ToString("N0") km</td>
+                                    <td class="text-muted small">@(d.LastTrip?.ToString("dd MMM yyyy") ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ?? Row 4: Compliance & Service ???????????????????????????????????? *@
+<div class="row g-4" id="complianceSection">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center bg-danger text-white">
+                <span><i class="bi bi-shield-exclamation me-1"></i>Compliance &amp; Service Alerts</span>
+                <a asp-controller="Vehicles" asp-action="Index" class="btn btn-sm btn-light">Manage Vehicles</a>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.ComplianceAlerts.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No compliance or service alerts.</p>
+                }
+                else
+                {
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Plate</th>
+                                <th>
+                                    Mileage
+                                    <button class="btn btn-link btn-sm p-0 ms-1 sort-btn" data-col="odo" title="Sort">
+                                        <i class="bi bi-arrow-up" id="odo-up"></i><i class="bi bi-arrow-down" id="odo-dn"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    Age
+                                    <button class="btn btn-link btn-sm p-0 ms-1 sort-btn" data-col="age" title="Sort">
+                                        <i class="bi bi-arrow-up" id="age-up"></i><i class="bi bi-arrow-down" id="age-dn"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    Reg Expiry
+                                    <button class="btn btn-link btn-sm p-0 ms-1 sort-btn" data-col="reg" title="Sort">
+                                        <i class="bi bi-arrow-up" id="reg-up"></i><i class="bi bi-arrow-down" id="reg-dn"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    Insurance Expiry
+                                    <button class="btn btn-link btn-sm p-0 ms-1 sort-btn" data-col="ins" title="Sort">
+                                        <i class="bi bi-arrow-up" id="ins-up"></i><i class="bi bi-arrow-down" id="ins-dn"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    Next Service
+                                    <button class="btn btn-link btn-sm p-0 ms-1 sort-btn" data-col="svc" title="Sort">
+                                        <i class="bi bi-arrow-up" id="svc-up"></i><i class="bi bi-arrow-down" id="svc-dn"></i>
+                                    </button>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="complianceTbody">
+                            @foreach (var v in Model.ComplianceAlerts)
+                            {
+                                var totalMonths = (today.Year - v.Year) * 12 + today.Month;
+                                var ageYrs      = totalMonths / 12;
+                                var ageMos      = totalMonths % 12;
+                                var ageSort     = totalMonths; // sort by total months
+                                var regOver     = v.RegistrationExpiry.HasValue && v.RegistrationExpiry.Value <= today;
+                                var insOver     = v.InsuranceExpiry.HasValue    && v.InsuranceExpiry.Value    <= today;
+                                var svcOver     = v.NextServiceDate.HasValue    && v.NextServiceDate.Value    <= today;
+                                var regSoon     = v.RegistrationExpiry.HasValue && v.RegistrationExpiry.Value <= alert30 && !regOver;
+                                var insSoon     = v.InsuranceExpiry.HasValue    && v.InsuranceExpiry.Value    <= alert30 && !insOver;
+                                var svcSoon     = v.NextServiceDate.HasValue    && v.NextServiceDate.Value    <= alert30 && !svcOver;
+                                <tr data-odo="@v.Odometer.ToString("D9")"
+                                    data-age="@ageSort.ToString("D5")"
+                                    data-reg="@(v.RegistrationExpiry?.ToString("yyyyMMdd") ?? "99999999")"
+                                    data-ins="@(v.InsuranceExpiry?.ToString("yyyyMMdd")   ?? "99999999")"
+                                    data-svc="@(v.NextServiceDate?.ToString("yyyyMMdd")   ?? "99999999")">
+                                    <td>
+                                        <a asp-controller="Vehicles" asp-action="Details" asp-route-id="@v.Id">@v.LicensePlate</a>
+                                        <small class="text-muted ms-1">@v.Year @v.Make @v.Model</small>
+                                    </td>
+                                    <td class="@(v.Odometer > 100_000 ? "text-danger fw-bold" : "")">
+                                        @if (v.Odometer > 100_000)
+                                        {
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-1" title="Over 100,000 km"></i>
+                                        }
+                                        @v.Odometer.ToString("N0") km
+                                    </td>
+                                    <td class="@(totalMonths >= 60 ? "text-danger fw-bold" : "")">
+                                        @if (totalMonths >= 60)
+                                        {
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-1" title="5 years or older"></i>
+                                        }
+                                        @if (ageMos > 0)
+                                        {
+                                            <span>@ageYrs yr @ageMos mo</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@ageYrs yr</span>
+                                        }
+                                    </td>
+                                    <td class="@(regOver ? "text-danger fw-bold" : regSoon ? "text-warning fw-semibold" : "")">
+                                        @if (regOver || regSoon)
+                                        {
+                                            <i class="bi bi-exclamation-circle-fill @(regOver ? "text-danger" : "text-warning") me-1"
+                                               title="@(regOver ? "Expired" : "Due within 30 days")"></i>
+                                        }
+                                        @(v.RegistrationExpiry?.ToString() ?? "—")
+                                    </td>
+                                    <td class="@(insOver ? "text-danger fw-bold" : insSoon ? "text-warning fw-semibold" : "")">
+                                        @if (insOver || insSoon)
+                                        {
+                                            <i class="bi bi-exclamation-circle-fill @(insOver ? "text-danger" : "text-warning") me-1"
+                                               title="@(insOver ? "Expired" : "Due within 30 days")"></i>
+                                        }
+                                        @(v.InsuranceExpiry?.ToString() ?? "—")
+                                    </td>
+                                    <td class="@(svcOver ? "text-danger fw-bold" : svcSoon ? "text-warning fw-semibold" : "")">
+                                        @if (svcOver || svcSoon)
+                                        {
+                                            <i class="bi bi-exclamation-circle-fill @(svcOver ? "text-danger" : "text-warning") me-1"
+                                               title="@(svcOver ? "Overdue" : "Due within 30 days")"></i>
+                                        }
+                                        @(v.NextServiceDate?.ToString() ?? "—")
+                                    </td>
+                                    <td>
+                                        <a asp-controller="Vehicles" asp-action="Edit" asp-route-id="@v.Id"
+                                           class="btn btn-sm btn-outline-danger">Update</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    (() => {
+        const todayJs       = new Date(); todayJs.setHours(0,0,0,0);
+        let calYear         = todayJs.getFullYear();
+        let calMonth        = todayJs.getMonth();
+        let selectedDate    = fmtDate(todayJs);
+        const totalVehicles = @Model.TotalVehicles;
+
+        // ?? Calendar ?????????????????????????????????????????????????????
+        const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+        async function loadCalendar(year, month) {
+            try {
+                const res  = await fetch('/Home/GetMonthAvailability?year=' + year + '&month=' + (month + 1));
+                const data = await res.json();
+                renderCalendar(year, month, data.total, data.days);
+            } catch(e) { console.warn('Calendar load failed', e); }
+        }
+
+        function renderCalendar(year, month, total, days) {
+            document.getElementById('calMonthLabel').textContent =
+                new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const firstDow = new Date(year, month, 1).getDay();
+            const daysInMo = new Date(year, month + 1, 0).getDate();
+
+            let html = '<table class="table table-bordered table-sm mb-0 text-center" style="font-size:0.85rem">';
+            html    += '<thead class="table-light"><tr>' + DAYS.map(d => '<th class="py-2">' + d + '</th>').join('') + '</tr></thead><tbody><tr>';
+            for (let i = 0; i < firstDow; i++) html += '<td></td>';
+
+            for (let day = 1; day <= daysInMo; day++) {
+                const dStr    = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+                const avail   = (days && days[dStr] !== undefined) ? days[dStr] : total;
+                const dateObj = new Date(year, month, day);
+                const isPast  = dateObj < todayJs;
+                const isToday = dStr === fmtDate(todayJs);
+                const isSel   = dStr === selectedDate;
+
+                const bg = isPast             ? '#e9ecef'
+                         : avail >= total      ? '#d1e7dd'
+                         : avail > total * 0.5 ? '#fff3cd'
+                         : avail > 0           ? '#f8d7da'
+                         :                       '#842029';
+                const fg    = (!isPast && avail === 0) ? '#fff' : '#212529';
+                const bdr   = isSel ? '3px solid #0d6efd' : isToday ? '2px solid #0d6efd' : '';
+
+                html += '<td style="cursor:default' +
+                        ';background:' + bg + ';color:' + fg + ';border:' + bdr + ';padding:5px 3px" title="' + avail + ' available">' +
+                        '<div style="font-weight:' + (isToday ? '700' : '400') + ';font-size:1rem">' + day + '</div>' +
+                        '<div style="font-size:0.75rem">' + (isPast ? '' : avail + ' avail') + '</div></td>';
+
+                if ((firstDow + day) % 7 === 0 && day < daysInMo) html += '</tr><tr>';
+            }
+            html += '</tr></tbody></table>';
+            document.getElementById('calGrid').innerHTML = html;
+        }
+
+        window.selectDay = function(dateStr) {
+            selectedDate = dateStr;
+            loadCalendar(calYear, calMonth);
+        };
+
+        // ?? Generic sortable table ????????????????????????????????????????
+        const sortStates = {};
+
+        function sortTable(col, dir, tbodyId, colList) {
+            sortStates[tbodyId + '_' + col] = dir;
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            Array.from(tbody.querySelectorAll('tr'))
+                .sort((a, b) => {
+                    const av = a.dataset[col] || '999999999';
+                    const bv = b.dataset[col] || '999999999';
+                    return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+                })
+                .forEach(r => tbody.appendChild(r));
+
+            colList.forEach(c => {
+                const u = document.getElementById(c + '-up');
+                const d = document.getElementById(c + '-dn');
+                if (u) u.classList.remove('text-primary');
+                if (d) d.classList.remove('text-primary');
+            });
+            const arrow = document.getElementById(col + (dir === 'asc' ? '-up' : '-dn'));
+            if (arrow) arrow.classList.add('text-primary');
+        }
+
+        function makeSortable(btnSel, tbodyId, colList) {
+            document.querySelectorAll(btnSel).forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const col    = btn.dataset.col;
+                    const key    = tbodyId + '_' + col;
+                    const newDir = sortStates[key] === 'asc' ? 'desc' : 'asc';
+                    sortTable(col, newDir, tbodyId, colList);
+                });
+            });
+        }
+
+        makeSortable('.sort-btn',    'complianceTbody', ['odo','age','reg','ins','svc']);
+        makeSortable('.driver-sort', 'driverTbody',     ['drv-trips','drv-km','drv-bkm','drv-pkm']);
+
+        // ?? Metric card click ? scroll + sort ????????????????????????????
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const col = card.dataset.sortCol;
+                const dir = card.dataset.sortDir || 'desc';
+                document.getElementById('complianceSection')
+                        .scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(() => sortTable(col, dir, 'complianceTbody', ['odo','age','reg','ins','svc']), 400);
+            });
+        });
+
+        // ?? Month navigation ??????????????????????????????????????????????
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            if (--calMonth < 0) { calMonth = 11; calYear--; }
+            loadCalendar(calYear, calMonth);
+        });
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            if (++calMonth > 11) { calMonth = 0; calYear++; }
+            loadCalendar(calYear, calMonth);
+        });
+
+        function fmtDate(d) {
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+
+        // ?? Init ??????????????????????????????????????????????????????????
+        loadCalendar(calYear, calMonth);
+    })();
+    </script>
+}

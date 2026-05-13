@@ -1,0 +1,226 @@
+@model VehicleBookingSystem.Web.Models.CreateBookingViewModel
+@{
+    ViewData["Title"] = "New Booking";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h2 class="mb-4"><i class="bi bi-calendar-plus me-2"></i>New Booking</h2>
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="bookingForm">
+                    @Html.AntiForgeryToken()
+
+                    @* Step 1: Location *@
+                    <h6 class="text-muted text-uppercase mb-3">
+                        <span class="badge bg-primary me-2">1</span>Select Location
+                    </h6>
+                    <div class="mb-4">
+                        <label class="form-label">Filter by Location</label>
+                        <select id="locationFilter" class="form-select form-select-lg">
+                            @foreach (var loc in Model.Locations)
+                            {
+                                <option value="@loc.Value">@loc.Text</option>
+                            }
+                        </select>
+                        <div class="form-text">Narrow vehicles to a specific Healthwise site.</div>
+                    </div>
+
+                    @* Step 2: Dates *@
+                    <h6 class="text-muted text-uppercase mb-3">
+                        <span class="badge bg-primary me-2">2</span>Select Dates
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="StartTime" class="form-label"></label>
+                            <input id="startTimePicker" name="StartTime" class="form-control form-control-lg"
+                                   placeholder="Pick a start date/time" readonly />
+                            <span asp-validation-for="StartTime" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EndTime" class="form-label"></label>
+                            <input id="endTimePicker" name="EndTime" class="form-control form-control-lg"
+                                   placeholder="Pick an end date/time" readonly />
+                        </div>
+                        <div class="col-12">
+                            <div id="dateHint" class="text-muted small">
+                                <i class="bi bi-info-circle me-1"></i>Select dates to see which vehicles are available.
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Step 3: Vehicle *@
+                    <h6 class="text-muted text-uppercase mb-3">
+                        <span class="badge bg-primary me-2">3</span>Select Vehicle
+                    </h6>
+                    <div class="mb-4">
+                        <label asp-for="VehicleId" class="form-label">Vehicle</label>
+                        <select id="vehicleSelect" name="VehicleId" class="form-select form-select-lg" disabled>
+                            <option value="">— Select dates first —</option>
+                            @foreach (var v in Model.AvailableVehicles)
+                            {
+                                if (v.Id == Model.VehicleId)
+                                {
+                                    <option value="@v.Id" data-location="@v.Location" selected>
+                                        @v.Text [@v.Location]
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@v.Id" data-location="@v.Location">
+                                        @v.Text [@v.Location]
+                                    </option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="VehicleId" class="text-danger small"></span>
+                        <div id="vehicleStatus" class="mt-1"></div>
+                    </div>
+
+                    @* Step 4: Trip Details *@
+                    <h6 class="text-muted text-uppercase mb-3">
+                        <span class="badge bg-primary me-2">4</span>Trip Details
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Booked By</label>
+                            <input type="text" class="form-control" value="@Model.BookedByName" readonly />
+                            <input type="hidden" name="BookedByStaffId" value="@Model.BookedByStaffId" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="DriverStaffId" class="form-label"></label>
+                            <select asp-for="DriverStaffId" asp-items="Model.LicencedDrivers" class="form-select"></select>
+                            <div class="form-text text-success">
+                                <i class="bi bi-shield-check me-1"></i>Only staff with a current valid driver's licence are listed.
+                            </div>
+                            <span asp-validation-for="DriverStaffId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Destination" class="form-label"></label>
+                            <input asp-for="Destination" class="form-control form-control-lg"
+                                   placeholder="e.g. Midland Health Campus, 125 Roe St" />
+                            <span asp-validation-for="Destination" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label d-block">Trip Type</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="IsBusinessUse" id="tripBusiness" value="true" checked />
+                                <label class="form-check-label" for="tripBusiness">
+                                    <span class="badge bg-primary">Business</span>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="IsBusinessUse" id="tripPrivate" value="false" />
+                                <label class="form-check-label" for="tripPrivate">
+                                    <span class="badge bg-danger">Private</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Notes" class="form-label"></label>
+                            <textarea asp-for="Notes" class="form-control" rows="3"
+                                      placeholder="Describe the purpose of this trip…"></textarea>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle me-1"></i>Confirm Booking
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+    (() => {
+        const locationFilter = document.getElementById('locationFilter');
+        const vehicleSelect  = document.getElementById('vehicleSelect');
+        const dateHint       = document.getElementById('dateHint');
+        const allVehicleOpts = Array.from(vehicleSelect.querySelectorAll('option[data-location]'));
+
+        let selectedStart = null, selectedEnd = null;
+
+        // ?? Flatpickr ????????????????????????????????????????????????????
+        const startPicker = flatpickr('#startTimePicker', {
+            enableTime: true, dateFormat: 'Y-m-d H:i',
+            altInput: true,   altFormat: 'D d M Y H:i',
+            minuteIncrement: 15, minDate: 'today',
+            onChange(dates) {
+                selectedStart = dates[0] || null;
+                if (selectedStart) endPicker.set('minDate', selectedStart);
+                onDatesChanged();
+            }
+        });
+
+        const endPicker = flatpickr('#endTimePicker', {
+            enableTime: true, dateFormat: 'Y-m-d H:i',
+            altInput: true,   altFormat: 'D d M Y H:i',
+            minuteIncrement: 15, minDate: 'today',
+            onChange(dates) {
+                selectedEnd = dates[0] || null;
+                onDatesChanged();
+            }
+        });
+
+        // ?? Refresh vehicle list when dates or location change ???????????
+        function onDatesChanged() {
+            if (!selectedStart) {
+                vehicleSelect.disabled = true;
+                vehicleSelect.querySelector('option[value=""]').textContent = '— Select dates first —';
+                dateHint.innerHTML = '<i class="bi bi-info-circle me-1"></i>Select dates to see which vehicles are available.';
+                return;
+            }
+
+            const endMs    = selectedEnd || new Date(selectedStart.getTime() + 86400000);
+            const startStr = fmtLocal(selectedStart);
+            const endStr   = fmtLocal(endMs);
+
+            dateHint.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Checking availability\u2026';
+
+            fetch(`/Bookings/GetAvailableVehicles?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`)
+                .then(r => r.json())
+                .then(unavailableIds => applyFilters(new Set(unavailableIds)))
+                .catch(() => {
+                    vehicleSelect.disabled = false;
+                    dateHint.innerHTML = '<span class="text-warning">Could not check availability.</span>';
+                });
+        }
+
+        function applyFilters(unavailable) {
+            const loc = locationFilter.value;
+            let shown = 0;
+            allVehicleOpts.forEach(opt => {
+                const locOk  = !loc || opt.dataset.location === loc;
+                const dateOk = !unavailable.has(parseInt(opt.value));
+                const show   = locOk && dateOk;
+                opt.style.display = show ? '' : 'none';
+                if (!show && opt.selected) { opt.selected = false; vehicleSelect.value = ''; }
+                if (show) shown++;
+            });
+            vehicleSelect.querySelector('option[value=""]').textContent = shown
+                ? '— Select a vehicle —'
+                : '— No vehicles available —';
+            vehicleSelect.disabled = false;
+            dateHint.innerHTML = shown
+                ? `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>${shown} vehicle(s) available.</span>`
+                : `<span class="text-danger"><i class="bi bi-exclamation-circle me-1"></i>No vehicles available — adjust dates or location.</span>`;
+        }
+
+        locationFilter.addEventListener('change', () => { if (selectedStart) onDatesChanged(); });
+
+        function fmtLocal(d) {
+            const p = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+        }
+    })();
+    </script>
+}

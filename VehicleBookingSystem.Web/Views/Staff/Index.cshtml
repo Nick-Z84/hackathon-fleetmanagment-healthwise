@@ -1,0 +1,90 @@
+@model IEnumerable<VehicleBookingSystem.Core.Models.Staff>
+@using VehicleBookingSystem.Core.Models
+@{
+    ViewData["Title"] = "Staff";
+    var today = (DateOnly)ViewBag.Today;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-people me-2"></i>Staff</h2>
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Add Staff</a>
+    }
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Licence Expiry</th>
+                    <th>Licence Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-muted text-center py-4">No staff found.</td></tr>
+                }
+                @foreach (var s in Model)
+                {
+                    var isAdmin   = s.Role == StaffRole.Admin;
+                    var isCurrent = s.IsLicenceCurrentAsOf(today);
+                    var isExpired = s.HasDriversLicence && s.DriversLicenceExpiry.HasValue && s.DriversLicenceExpiry.Value < today;
+                    <tr class="@(isAdmin ? "table-warning" : "")">
+                        <td>
+                            <strong>@s.FullName</strong>
+                            @if (isAdmin)
+                            {
+                                <i class="bi bi-shield-fill-check text-warning ms-1" title="Administrator"></i>
+                            }
+                        </td>
+                        <td class="text-muted small">@s.Username</td>
+                        <td>
+                            @if (s.DriversLicenceExpiry.HasValue)
+                            {
+                                <span class="@(isExpired ? "text-danger fw-bold" : isCurrent && s.DriversLicenceExpiry.Value <= today.AddDays(60) ? "text-warning" : "")">
+                                    @s.DriversLicenceExpiry
+                                </span>
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
+                        <td>
+                            @if (!s.HasDriversLicence)
+                            {
+                                <span class="badge bg-secondary">No Licence</span>
+                            }
+                            else if (isExpired)
+                            {
+                                <span class="badge bg-danger">Expired</span>
+                            }
+                            else if (isCurrent && s.DriversLicenceExpiry!.Value <= today.AddDays(60))
+                            {
+                                <span class="badge bg-warning text-dark">Expiring Soon</span>
+                            }
+                            else if (isCurrent)
+                            {
+                                <span class="badge bg-success">Current</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form asp-action="Delete" asp-route-id="@s.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Remove @s.FullName?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

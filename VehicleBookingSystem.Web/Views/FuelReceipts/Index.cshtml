@@ -1,0 +1,136 @@
+@model IEnumerable<VehicleBookingSystem.Core.Models.FuelReceipt>
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Fuel Receipts";
+    int? vehicleId     = ViewBag.VehicleId;
+    string? dateFrom   = ViewBag.DateFrom;
+    string? dateTo     = ViewBag.DateTo;
+    string? uploadedBy = ViewBag.UploadedBy;
+    var vehicleItems   = (IEnumerable<SelectListItem>)ViewBag.Vehicles;
+    var uploaders      = (IEnumerable<string>)ViewBag.Uploaders;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-fuel-pump me-2"></i>Fuel Receipts</h2>
+    <a asp-action="Create" asp-route-vehicles="@vehicleId" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Add Receipt
+    </a>
+</div>
+
+@* ?? Filters ?????????????????????????????????????????????????????????? *@
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-12 col-sm-6 col-md-3">
+                <label class="form-label mb-1 small fw-semibold">Vehicle</label>
+                <select name="vehicles" class="form-select form-select-sm">
+                    <option value="">— All vehicles —</option>
+                    @foreach (var v in vehicleItems)
+                    {
+                        if (v.Value == vehicleId?.ToString())
+                        {
+                            <option value="@v.Value" selected>@v.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@v.Value">@v.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-6 col-sm-3 col-md-2">
+                <label class="form-label mb-1 small fw-semibold">Date From</label>
+                <input type="date" name="dateFrom" class="form-control form-control-sm" value="@dateFrom" />
+            </div>
+            <div class="col-6 col-sm-3 col-md-2">
+                <label class="form-label mb-1 small fw-semibold">Date To</label>
+                <input type="date" name="dateTo" class="form-control form-control-sm" value="@dateTo" />
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <label class="form-label mb-1 small fw-semibold">Uploaded By</label>
+                <select name="uploadedBy" class="form-select form-select-sm">
+                    <option value="">— All people —</option>
+                    @foreach (var u in uploaders)
+                    {
+                        if (u == uploadedBy)
+                        {
+                            <option value="@u" selected>@u</option>
+                        }
+                        else
+                        {
+                            <option value="@u">@u</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary ms-1">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Date</th><th>Vehicle</th><th>Litres</th><th>$/L</th><th>Total</th><th>Station</th><th>Odometer</th><th>Uploaded By</th><th></th></tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="9" class="text-muted text-center py-4">No fuel receipts recorded.</td></tr>
+                }
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td>@f.Date</td>
+                        <td>
+                            <a asp-controller="Vehicles" asp-action="Details" asp-route-id="@f.VehicleId">
+                                @f.Vehicle?.LicensePlate
+                            </a>
+                        </td>
+                        <td>@f.Litres L</td>
+                        <td>$@f.CostPerLitre.ToString("F4")</td>
+                        <td><strong>$@f.TotalCost.ToString("F2")</strong></td>
+                        <td>@(f.Station ?? "—")</td>
+                        <td>@(f.OdometerReading?.ToString("N0") ?? "—") km</td>
+                        <td>@f.UploadedBy</td>
+                        <td class="text-end">
+                            @* Always show generated paper receipt *@
+                            <a asp-action="ViewReceipt" asp-route-id="@f.Id"
+                               target="_blank" class="btn btn-sm btn-outline-secondary me-1"
+                               title="View paper receipt">
+                                <i class="bi bi-receipt me-1"></i>Receipt
+                            </a>
+                            @* Also show uploaded image/PDF if available *@
+                            @if (f.ReceiptFilePath != null)
+                            {
+                                <a href="/@f.ReceiptFilePath" target="_blank"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="View uploaded file">
+                                    <i class="bi bi-image me-1"></i>Photo
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            @if (Model.Any())
+            {
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="2" class="fw-bold">Total</td>
+                        <td>@Model.Sum(f => f.Litres) L</td>
+                        <td></td>
+                        <td><strong>$@Model.Sum(f => f.TotalCost).ToString("F2")</strong></td>
+                        <td colspan="4"></td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+</div>

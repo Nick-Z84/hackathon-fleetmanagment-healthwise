@@ -1,0 +1,39 @@
+@model VehicleBookingSystem.Web.Models.UpdateServiceViewModel
+@{
+    ViewData["Title"] = "Update Service Date";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="mb-4"><i class="bi bi-wrench-adjustable me-2"></i>Update Service</h2>
+        <p class="text-muted">@Model.VehicleDisplay</p>
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="UpdateService" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="LastServiceDate" class="form-label"></label>
+                            <input asp-for="LastServiceDate" class="form-control" type="date" />
+                            <span asp-validation-for="LastServiceDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="NextServiceDate" class="form-label"></label>
+                            <input asp-for="NextServiceDate" class="form-control" type="date" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="CurrentOdometer" class="form-label"></label>
+                            <input asp-for="CurrentOdometer" class="form-control" type="number" />
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">Save Service Record</button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }
