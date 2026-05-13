@@ -62,6 +62,31 @@
                             <label asp-for="Notes" class="form-label"></label>
                             <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
                         </div>
+                        <div class="col-12">
+                            <label asp-for="TreadDepth" class="form-label d-block"></label>
+                            <div class="d-flex gap-3">
+                                @foreach (var level in Enum.GetValues<VehicleBookingSystem.Core.Models.TreadDepth>())
+                                {
+                                    var (btnClass, icon) = level switch
+                                    {
+                                        VehicleBookingSystem.Core.Models.TreadDepth.High => ("btn-success",          "bi-check-circle-fill"),
+                                        VehicleBookingSystem.Core.Models.TreadDepth.Med  => ("btn-warning text-dark", "bi-exclamation-circle-fill"),
+                                        _                                                 => ("btn-danger",           "bi-x-circle-fill")
+                                    };
+                                    var isSelected = Model.TreadDepth == level;
+                                    <div class="form-check d-none">
+                                        <input class="form-check-input" type="radio" asp-for="TreadDepth"
+                                               value="@level" id="td_@level" />
+                                    </div>
+                                    <button type="button"
+                                            class="btn @btnClass @(isSelected ? "" : "opacity-50") tread-btn"
+                                            data-value="@level" data-target="TreadDepth">
+                                        <i class="bi @icon me-1"></i>@level
+                                    </button>
+                                }
+                            </div>
+                            <input type="hidden" asp-for="TreadDepth" id="TreadDepth" />
+                        </div>
                     </div>
                     <hr class="my-3" />
                     <h6 class="text-muted">Fleet Details</h6>
@@ -128,4 +153,19 @@
     </div>
 </div>
 
-@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+    document.querySelectorAll('.tread-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var val    = btn.dataset.value;
+            var hidden = document.getElementById(btn.dataset.target);
+            if (hidden) hidden.value = val;
+            document.querySelectorAll('.tread-btn').forEach(function (b) {
+                b.classList.add('opacity-50');
+            });
+            btn.classList.remove('opacity-50');
+        });
+    });
+    </script>
+}

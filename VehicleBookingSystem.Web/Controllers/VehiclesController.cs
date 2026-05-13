@@ -55,7 +55,8 @@ public class VehiclesController(
             Location = vm.Location, FleetAllocation = vm.FleetAllocation,
             RegistrationNumber = vm.RegistrationNumber, RegistrationExpiry = vm.RegistrationExpiry,
             InsuranceProvider = vm.InsuranceProvider, InsurancePolicyNumber = vm.InsurancePolicyNumber,
-            InsuranceExpiry = vm.InsuranceExpiry, Notes = vm.Notes
+            InsuranceExpiry = vm.InsuranceExpiry, Notes = vm.Notes,
+            TreadDepth = vm.TreadDepth
         };
         var created = await vehicleRepo.AddAsync(vehicle);
         await auditRepo.AddAsync(new AuditLog
@@ -83,6 +84,7 @@ public class VehiclesController(
             InsuranceProvider = v.InsuranceProvider, InsurancePolicyNumber = v.InsurancePolicyNumber,
             InsuranceExpiry = v.InsuranceExpiry,
             LastServiceDate = v.LastServiceDate, NextServiceDate = v.NextServiceDate, Notes = v.Notes,
+            TreadDepth = v.TreadDepth,
             ExistingImagePath = v.ImagePath
         };
         return View(vm);
@@ -105,6 +107,7 @@ public class VehiclesController(
         vehicle.InsuranceProvider = vm.InsuranceProvider; vehicle.InsurancePolicyNumber = vm.InsurancePolicyNumber;
         vehicle.InsuranceExpiry = vm.InsuranceExpiry;
         vehicle.LastServiceDate = vm.LastServiceDate; vehicle.NextServiceDate = vm.NextServiceDate; vehicle.Notes = vm.Notes;
+        vehicle.TreadDepth = vm.TreadDepth;
 
         // Handle vehicle photo upload
         if (vm.VehicleImage is { Length: > 0 })

@@ -10,6 +10,13 @@ public enum VehicleStatus
     Retired
 }
 
+public enum TreadDepth
+{
+    High,
+    Med,
+    Low
+}
+
 public class Vehicle
 {
     public int Id { get; set; }
@@ -25,6 +32,7 @@ public class Vehicle
     public DateOnly? NextServiceDate { get; set; }
     public string? Notes { get; set; }
     public string? ImagePath { get; set; }
+    public TreadDepth? TreadDepth { get; set; }
 
     // Fleet location
     public string? Location { get; set; }

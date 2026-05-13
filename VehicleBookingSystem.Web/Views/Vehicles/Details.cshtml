@@ -85,6 +85,20 @@
                     }
                     else { <span class="text-muted">—</span> }
                 </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Tyre Tread Depth</span>
+                    @if (Model.TreadDepth.HasValue)
+                    {
+                        var (badgeClass, icon) = Model.TreadDepth.Value switch
+                        {
+                            VehicleBookingSystem.Core.Models.TreadDepth.High => ("bg-success",    "bi-check-circle-fill"),
+                            VehicleBookingSystem.Core.Models.TreadDepth.Med  => ("bg-warning text-dark", "bi-exclamation-circle-fill"),
+                            _                                                 => ("bg-danger",     "bi-x-circle-fill")
+                        };
+                        <span class="badge @badgeClass"><i class="bi @icon me-1"></i>@Model.TreadDepth</span>
+                    }
+                    else { <span class="text-muted">—</span> }
+                </li>
                 @if (Model.Notes != null)
                 {
                     <li class="list-group-item"><span class="text-muted">@Model.Notes</span></li>

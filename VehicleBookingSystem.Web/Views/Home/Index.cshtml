@@ -18,63 +18,63 @@
 }
 
 <style>
-    .metric-card { cursor: pointer; transition: transform .15s, box-shadow .15s; }
-    .metric-card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+    /* Circle metric badges */
+    .metric-circle {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform .15s, box-shadow .15s;
+        box-shadow: 0 3px 10px rgba(0,0,0,.20);
+        margin: 0 auto;
+        text-align: center;
+    }
+    .metric-circle:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,.28);
+    }
+    .metric-circle .mc-number { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+    .metric-circle .mc-label  { font-size: 0.65rem; line-height: 1.25; margin-top: 4px; opacity: .88; padding: 0 8px; }
+    .metric-purple { background-color: #5a3f99 !important; color: #fff !important; }
 </style>
 
 <h2 class="mb-3"><i class="bi bi-speedometer2 me-2"></i>Fleet Dashboard</h2>
 
-@* ?? Row 0: Metric Cards ????????????????????????????????????????????? *@
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-4 col-xl">
-        <div class="card text-bg-danger metric-card h-100"
-             data-sort-col="odo" data-sort-dir="desc"
-             title="Vehicles with odometer over 100,000 km — click to sort">
-            <div class="card-body text-center py-3">
-                <div class="display-6 fw-bold">@Model.HighMileageCount</div>
-                <div class="small mt-1">High Mileage<br><span class="opacity-75">&gt; 100,000 km</span></div>
-            </div>
-        </div>
+@* ?? Row 0: Circle Metric Badges ???????????????????????????????????????? *@
+<div class="d-flex flex-wrap justify-content-center gap-4 mb-4">
+    <div class="metric-circle metric-purple"
+         data-sort-col="odo" data-sort-dir="desc"
+         title="Vehicles with odometer over 100,000 km — click to sort">
+        <div class="mc-number">@Model.HighMileageCount</div>
+        <div class="mc-label">High Mileage<br><span class="opacity-75">&gt; 100,000 km</span></div>
     </div>
-    <div class="col-6 col-md-4 col-xl">
-        <div class="card text-bg-danger metric-card h-100"
-             data-sort-col="age" data-sort-dir="desc"
-             title="Vehicles 5 years or older — click to sort">
-            <div class="card-body text-center py-3">
-                <div class="display-6 fw-bold">@Model.HighAgeCount</div>
-                <div class="small mt-1">Ageing Vehicles<br><span class="opacity-75">&gt;= 5 years</span></div>
-            </div>
-        </div>
+    <div class="metric-circle metric-purple"
+         data-sort-col="age" data-sort-dir="desc"
+         title="Vehicles 5 years or older — click to sort">
+        <div class="mc-number">@Model.HighAgeCount</div>
+        <div class="mc-label">Ageing Vehicles<br><span class="opacity-75">&gt;= 5 years</span></div>
     </div>
-    <div class="col-6 col-md-4 col-xl">
-        <div class="card text-bg-danger metric-card h-100"
-             data-sort-col="reg" data-sort-dir="asc"
-             title="Vehicles with expired registration — click to sort">
-            <div class="card-body text-center py-3">
-                <div class="display-6 fw-bold">@Model.OverdueRegCount</div>
-                <div class="small mt-1">Reg Overdue<br><span class="opacity-75">expired</span></div>
-            </div>
-        </div>
+    <div class="metric-circle metric-purple"
+         data-sort-col="reg" data-sort-dir="asc"
+         title="Vehicles with expired registration — click to sort">
+        <div class="mc-number">@Model.OverdueRegCount</div>
+        <div class="mc-label">Reg Overdue<br><span class="opacity-75">expired</span></div>
     </div>
-    <div class="col-6 col-md-4 col-xl">
-        <div class="card text-bg-danger metric-card h-100"
-             data-sort-col="ins" data-sort-dir="asc"
-             title="Vehicles with expired insurance — click to sort">
-            <div class="card-body text-center py-3">
-                <div class="display-6 fw-bold">@Model.OverdueInsCount</div>
-                <div class="small mt-1">Insurance Overdue<br><span class="opacity-75">expired</span></div>
-            </div>
-        </div>
+    <div class="metric-circle metric-purple"
+         data-sort-col="ins" data-sort-dir="asc"
+         title="Vehicles with expired insurance — click to sort">
+        <div class="mc-number">@Model.OverdueInsCount</div>
+        <div class="mc-label">Insurance Overdue<br><span class="opacity-75">expired</span></div>
     </div>
-    <div class="col-6 col-md-4 col-xl">
-        <div class="card text-bg-warning metric-card h-100"
-             data-sort-col="svc" data-sort-dir="asc"
-             title="Vehicles with overdue service — click to sort">
-            <div class="card-body text-center py-3">
-                <div class="display-6 fw-bold">@Model.OverdueSvcCount</div>
-                <div class="small mt-1">Service Overdue<br><span class="opacity-75">past due date</span></div>
-            </div>
-        </div>
+    <div class="metric-circle metric-purple"
+         data-sort-col="svc" data-sort-dir="asc"
+         title="Vehicles with overdue service — click to sort">
+        <div class="mc-number">@Model.OverdueSvcCount</div>
+        <div class="mc-label">Service Overdue<br><span class="opacity-75">past due date</span></div>
     </div>
 </div>
 
@@ -491,8 +491,8 @@
         makeSortable('.sort-btn',    'complianceTbody', ['odo','age','reg','ins','svc']);
         makeSortable('.driver-sort', 'driverTbody',     ['drv-trips','drv-km','drv-bkm','drv-pkm']);
 
-        // ?? Metric card click ? scroll + sort ????????????????????????????
-        document.querySelectorAll('.metric-card').forEach(card => {
+        // ?? Metric circle click ? scroll + sort ??????????????????????????
+        document.querySelectorAll('.metric-circle').forEach(card => {
             card.addEventListener('click', () => {
                 const col = card.dataset.sortCol;
                 const dir = card.dataset.sortDir || 'desc';

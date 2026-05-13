@@ -30,14 +30,14 @@
         <table class="table table-hover mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Vehicle</th><th>License Plate</th><th>Location</th><th>Status</th>
+                    <th>Vehicle</th><th>License Plate</th><th>Location</th><th>Tread</th><th>Status</th>
                     <th>Odometer</th><th>Reg Expiry</th><th>Ins Expiry</th><th>Next Service</th><th></th>
                 </tr>
             </thead>
             <tbody>
                 @if (!Model.Any())
                 {
-                    <tr><td colspan="9" class="text-muted text-center py-4">No vehicles found.</td></tr>
+                    <tr><td colspan="10" class="text-muted text-center py-4">No vehicles found.</td></tr>
                 }
                 @foreach (var v in Model)
                 {
@@ -46,6 +46,19 @@
                         <td><a asp-action="Details" asp-route-id="@v.Id">@v.Year @v.Make @v.Model</a></td>
                         <td>@v.LicensePlate</td>
                         <td>@(v.Location ?? "—")</td>
+                        <td>
+                            @if (v.TreadDepth.HasValue)
+                            {
+                                var (cls, lbl) = v.TreadDepth.Value switch
+                                {
+                                    VehicleBookingSystem.Core.Models.TreadDepth.High => ("bg-success",            "High"),
+                                    VehicleBookingSystem.Core.Models.TreadDepth.Med  => ("bg-warning text-dark",  "Med"),
+                                    _                                                 => ("bg-danger",             "Low")
+                                };
+                                <span class="badge @cls">@lbl</span>
+                            }
+                            else { <span class="text-muted">—</span> }
+                        </td>
                         <td><span class="badge @statusBadge(v.Status)">@v.Status</span></td>
                         <td>@v.Odometer.ToString("N0") km</td>
                         <td class="@(v.RegistrationExpiry.HasValue && v.RegistrationExpiry <= today ? "text-danger fw-bold" : v.RegistrationExpiry.HasValue && v.RegistrationExpiry <= today.AddDays(60) ? "text-warning" : "")">

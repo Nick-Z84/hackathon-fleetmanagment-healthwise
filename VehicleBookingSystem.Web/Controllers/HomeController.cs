@@ -27,11 +27,22 @@ public class HomeController(
         var overdueSvc   = allVehicles.Count(v => v.NextServiceDate.HasValue     && v.NextServiceDate.Value     <= today);
 
         // Upcoming and current: active bookings whose end time is still in the future
+        // Current bookings (already started) ? sort by EndTime asc so soonest-ending appears first
+        // Upcoming bookings (not yet started)  ? sort by StartTime asc so next-starting appears first
         var activeBookings = allBookings
             .Where(b => b.Status == Core.Models.BookingStatus.Active
                      && (b.EndTime == null || b.EndTime > now))
-            .OrderBy(b => b.StartTime)
             .ToList();
+
+        var currentBookings  = activeBookings
+            .Where(b => b.StartTime <= now)
+            .OrderBy(b => b.EndTime ?? DateTime.MaxValue);
+
+        var upcomingBookings = activeBookings
+            .Where(b => b.StartTime > now)
+            .OrderBy(b => b.StartTime);
+
+        var sortedActiveBookings = currentBookings.Concat(upcomingBookings).ToList();
 
         // Driver usage — computed from all bookings that have odometer data
         var driverUsage = allBookings
@@ -63,7 +74,7 @@ public class HomeController(
             OverdueRegCount  = overdueReg,
             OverdueInsCount  = overdueIns,
             OverdueSvcCount  = overdueSvc,
-            ActiveBookings   = activeBookings,
+            ActiveBookings   = sortedActiveBookings,
             ComplianceAlerts = compliance,
             DriverUsage      = driverUsage
         };

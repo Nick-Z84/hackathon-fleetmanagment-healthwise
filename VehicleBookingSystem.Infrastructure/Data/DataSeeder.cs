@@ -113,7 +113,8 @@ public static class DataSeeder
                 RegistrationExpiry    = today.AddDays(rng.Next(30, 365)),
                 InsuranceProvider     = InsuranceProviders[rng.Next(InsuranceProviders.Length)],
                 InsurancePolicyNumber = $"POL{rng.Next(100_000, 999_999)}",
-                InsuranceExpiry       = today.AddDays(rng.Next(30, 365))
+                InsuranceExpiry       = today.AddDays(rng.Next(30, 365)),
+                TreadDepth            = (TreadDepth)rng.Next(3)
             });
             currentVehicles.Add(added);
         }
@@ -149,7 +150,8 @@ public static class DataSeeder
                 RegistrationExpiry    = regExpiry,
                 InsuranceProvider     = InsuranceProviders[rng.Next(InsuranceProviders.Length)],
                 InsurancePolicyNumber = $"POL{rng.Next(100_000, 999_999)}",
-                InsuranceExpiry       = insExpiry
+                InsuranceExpiry       = insExpiry,
+                TreadDepth            = (TreadDepth)rng.Next(3)
             });
             vehicleList.Add(vehicle);
         }

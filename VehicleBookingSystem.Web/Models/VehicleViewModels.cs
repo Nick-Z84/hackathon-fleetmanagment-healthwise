@@ -22,6 +22,7 @@ public class CreateVehicleViewModel
     [Display(Name = "Last Service Date")] public DateOnly? LastServiceDate { get; set; }
     [Display(Name = "Next Service Date")] public DateOnly? NextServiceDate { get; set; }
     public string? Notes { get; set; }
+    [Display(Name = "Tyre Tread Depth")] public VehicleBookingSystem.Core.Models.TreadDepth? TreadDepth { get; set; }
 }
 
 public class EditVehicleViewModel
@@ -45,6 +46,7 @@ public class EditVehicleViewModel
     [Display(Name = "Last Service Date")] public DateOnly? LastServiceDate { get; set; }
     [Display(Name = "Next Service Date")] public DateOnly? NextServiceDate { get; set; }
     public string? Notes { get; set; }
+    [Display(Name = "Tyre Tread Depth")] public VehicleBookingSystem.Core.Models.TreadDepth? TreadDepth { get; set; }
     public string? ExistingImagePath { get; set; }
     [Display(Name = "Vehicle Photo")] public Microsoft.AspNetCore.Http.IFormFile? VehicleImage { get; set; }
 }
